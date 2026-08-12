@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+  <title>Admin Dashboard — ExamBook Hub</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="dashboard-body">
+  <div id="toast" class="toast"></div>
+  <header class="site-header">
+    <div class="topbar">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">EB</span><span><strong>ExamBook <em>Hub</em></strong><small>Powered by Adarsh Shukla</small></span>
+      </a>
+      <nav class="nav"><a href="index.html">← View Website</a></nav>
+      <button class="menu-btn" id="menuBtn">☰</button>
+    </div>
+  </header>
+
+  <main class="admin-wrap">
+    <section id="loginPanel" class="login-panel">
+      <div class="login-icon">🔐</div>
+      <span class="section-kicker">PRIVATE ADMIN AREA</span>
+      <h1>Welcome back, Admin.</h1>
+      <p>केवल authorised account से books, categories और library content manage करें।</p>
+      <form id="loginForm">
+        <label>Email<input id="email" type="email" autocomplete="email" required placeholder="Admin email"></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required placeholder="Password"></label>
+        <button class="btn btn-primary full" type="submit">Secure Login →</button>
+      </form>
+      <small class="security-note">🔒 Authentication और database permissions Supabase RLS से protected हैं।</small>
+    </section>
+
+    <section id="dashboardPanel" class="hidden">
+      <div class="admin-head">
+        <div><span class="section-kicker">CONTROL CENTER</span><h1>Advanced Admin Dashboard</h1><p id="adminEmail"></p></div>
+        <button id="logoutBtn" class="btn btn-ghost">Logout</button>
+      </div>
+
+      <div class="admin-stats">
+        <div class="admin-stat"><span>📚</span><b id="dashBooks">0</b><small>Total Books</small></div>
+        <div class="admin-stat"><span>🎯</span><b id="dashCategories">0</b><small>Categories</small></div>
+        <div class="admin-stat"><span>☁️</span><b>LIVE</b><small>Vercel + Supabase</small></div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-card">
+          <div class="card-head"><div><span class="section-kicker">CONTENT</span><h2 id="bookFormTitle">Add New Book</h2></div><button id="cancelEdit" class="text-btn hidden">Cancel edit</button></div>
+          <form id="bookForm">
+            <input type="hidden" id="bookId">
+            <div class="two-col">
+              <label>Book Title *<input id="bookTitle" required placeholder="जैसे SSC CGL Maths Chapterwise"></label>
+              <label>Exam Category *<select id="bookExam" required></select></label>
+            </div>
+            <div class="two-col">
+              <label>Author / Publisher<input id="bookAuthor" placeholder="Optional"></label>
+              <label>Year / Edition<input id="bookYear" placeholder="2026 / 3rd Edition"></label>
+            </div>
+            <label>Short Description *<textarea id="bookDescription" required rows="4" placeholder="इस book में क्या मिलेगा..."></textarea></label>
+            <label>Tags <input id="bookTags" placeholder="maths, practice set, cgl"></label>
+            <div class="upload-grid">
+              <label class="upload-box">📕 <strong>Cover Image *</strong><small>JPG / PNG / WEBP</small><input id="coverFile" type="file" accept="image/*"></label>
+              <label class="upload-box">📄 <strong>Book PDF *</strong><small>PDF only</small><input id="pdfFile" type="file" accept="application/pdf"></label>
+            </div>
+            <div class="progress-wrap hidden" id="progressWrap"><div id="progressBar"></div><small id="progressText">Uploading...</small></div>
+            <button class="btn btn-primary full" id="saveBookBtn" type="submit">Publish Book →</button>
+          </form>
+        </div>
+
+        <div class="admin-card">
+          <div class="card-head"><div><span class="section-kicker">TAXONOMY</span><h2>Exam Categories</h2></div></div>
+          <form id="categoryForm" class="category-form">
+<select id="categoryGroup" required><option value="SSC">SSC</option><option value="Railway">Railway</option><option value="Uttar Pradesh">Uttar Pradesh</option><option value="Bihar">Bihar</option><option value="Rajasthan">Rajasthan</option><option value="Madhya Pradesh">Madhya Pradesh</option><option value="Maharashtra">Maharashtra</option><option value="Delhi">Delhi</option><option value="Haryana">Haryana</option><option value="Punjab">Punjab</option><option value="Gujarat">Gujarat</option><option value="West Bengal">West Bengal</option><option value="Jharkhand">Jharkhand</option><option value="Chhattisgarh">Chhattisgarh</option><option value="Uttarakhand">Uttarakhand</option><option value="Himachal Pradesh">Himachal Pradesh</option><option value="Odisha">Odisha</option><option value="Andhra Pradesh">Andhra Pradesh</option><option value="Telangana">Telangana</option><option value="Karnataka">Karnataka</option><option value="Tamil Nadu">Tamil Nadu</option><option value="Kerala">Kerala</option><option value="Assam">Assam</option><option value="Jammu & Kashmir">Jammu & Kashmir</option><option value="National">National</option><option value="Other">Other</option></select>
+<input id="categoryName" required placeholder="जैसे SSC CGL"><input id="categoryIcon" maxlength="3" placeholder="🎯"><button class="btn btn-primary" type="submit">Add</button></form>
+          <div id="adminCategories" class="admin-list"></div>
+        </div>
+      </div>
+
+      <div class="admin-card books-admin">
+        <div class="card-head"><div><span class="section-kicker">LIBRARY</span><h2>Manage Books</h2></div><input id="adminSearch" class="small-search" placeholder="Search books..."></div>
+        <div class="admin-table-wrap"><table><thead><tr><th>Book</th><th>Exam</th><th>Details</th><th>Actions</th></tr></thead><tbody id="adminBooks"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="assets/dashboard.js"></script>
+</body>
+</html>
