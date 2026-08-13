@@ -40,47 +40,84 @@
         <button id="logoutBtn" class="btn btn-ghost">Logout</button>
       </div>
 
+      
+          <!-- ================= ADMIN STATS ================= -->
       <div class="admin-stats">
-        <!-- ================= ANNOUNCEMENT ================= -->
-<div class="admin-card announcement-admin-card">
-  <div class="card-head">
-    <div>
-      <span class="section-kicker">WEBSITE NOTICE</span>
-      <h2>🔔 Announcement Banner</h2>
-    </div>
-  </div>
 
-  <form id="announcementForm">
-    <label>
-      Announcement Message
-      <input
-        id="announcementInput"
-        type="text"
-        maxlength="180"
-        placeholder="जैसे 🔔 New SSC books added today"
-        required
-      >
-    </label>
+        <div class="admin-stat">
+          <span>📚</span>
+          <b id="dashBooks">0</b>
+          <small>Total Books</small>
+        </div>
 
-    <button
-      class="btn btn-primary full"
-      type="submit"
-    >
-      Save Announcement →
-    </button>
-  </form>
+        <div class="admin-stat">
+          <span>🎯</span>
+          <b id="dashCategories">0</b>
+          <small>Categories</small>
+        </div>
 
-  <small class="security-note">
-    यह message आपकी website के सबसे ऊपर दिखाई देगा।
-  </small>
-</div>
-<!-- =============== END ANNOUNCEMENT =============== -->
-        <div class="admin-stat"><span>📚</span><b id="dashBooks">0</b><small>Total Books</small></div>
-        <div class="admin-stat"><span>🎯</span><b id="dashCategories">0</b><small>Categories</small></div>
-        <div class="admin-stat"><span>☁️</span><b>LIVE</b><small>Vercel + Supabase</small></div>
+        <div class="admin-stat">
+          <span>☁️</span>
+          <b>LIVE</b>
+          <small>Vercel + Supabase</small>
+        </div>
+
       </div>
 
+
+      <!-- ================= ANNOUNCEMENT ================= -->
+      <section class="admin-card announcement-admin-card">
+
+        <div class="card-head">
+          <div>
+            <span class="section-kicker">WEBSITE NOTICE</span>
+            <h2>🔔 Announcement Banner</h2>
+          </div>
+        </div>
+
+        <form id="announcementForm">
+
+          <label>
+            Announcement Message
+
+            <input
+              id="announcementInput"
+              type="text"
+              maxlength="180"
+              placeholder="जैसे 🔔 New SSC books added today"
+              required
+            >
+          </label>
+
+          <button
+            class="btn btn-primary full"
+            type="submit"
+          >
+            Save Announcement →
+          </button>
+
+        </form>
+
+        <button
+          id="removeAnnouncement"
+          type="button"
+          class="btn btn-ghost full"
+          style="margin-top:12px;"
+        >
+          Remove Current Announcement
+        </button>
+
+        <small class="security-note">
+          यह message आपकी website के सबसे ऊपर दिखाई देगा।
+        </small>
+
+      </section>
+      <!-- =============== END ANNOUNCEMENT =============== -->
+
+
+      <!-- ================= ADMIN CONTENT ================= -->
       <div class="admin-grid">
+
         <div class="admin-card">
           <div class="card-head"><div><span class="section-kicker">CONTENT</span><h2 id="bookFormTitle">Add New Book</h2></div><button id="cancelEdit" class="text-btn hidden">Cancel edit</button></div>
           <form id="bookForm">
