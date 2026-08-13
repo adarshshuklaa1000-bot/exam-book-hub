@@ -586,5 +586,139 @@ document
   });
 
 /* START */
+// ================= ANNOUNCEMENT POPUP =================
 
+async function loadAnnouncement() {
+
+  if (!configured) return;
+
+  try {
+
+    const { data, error } = await supabase
+      .from("announcements")
+      .select("*")
+      .eq("active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("ANNOUNCEMENT ERROR:", error);
+      return;
+    }
+
+    if (!data) return;
+
+    showAnnouncement(data);
+
+  } catch (error) {
+
+    console.error(
+      "Announcement loading failed:",
+      error
+    );
+
+  }
+}
+
+
+function showAnnouncement(data) {
+
+  // Duplicate popup रोकना
+  if (document.getElementById("announcementPopup")) {
+    return;
+  }
+
+  const popup = document.createElement("div");
+
+  popup.id = "announcementPopup";
+
+  popup.innerHTML = `
+    <div class="announcement-overlay">
+
+      <div class="announcement-popup">
+
+        <button
+          class="announcement-close"
+          aria-label="Close announcement"
+        >
+          ×
+        </button>
+
+        <div class="announcement-brand">
+
+          <div class="announcement-logo">
+            EB
+          </div>
+
+          <div>
+            <strong>
+              ExamBook <em>Hub</em>
+            </strong>
+
+            <small>
+              Powered by Adarsh Shukla
+            </small>
+          </div>
+
+        </div>
+
+        <div class="announcement-icon">
+          🔔
+        </div>
+
+        <div class="announcement-content">
+
+          <span class="announcement-label">
+            IMPORTANT ANNOUNCEMENT
+          </span>
+
+          <h2>
+            ${escapeHTML(data.title)}
+          </h2>
+
+          <p>
+            ${escapeHTML(data.message)}
+          </p>
+
+        </div>
+
+        <button
+          class="announcement-ok btn btn-primary"
+        >
+          Got it ✓
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+
+  const close = () => {
+
+    popup.classList.add("announcement-hide");
+
+    setTimeout(() => {
+      popup.remove();
+    }, 250);
+
+  };
+
+
+  popup
+    .querySelector(".announcement-close")
+    .addEventListener("click", close);
+
+  popup
+    .querySelector(".announcement-ok")
+    .addEventListener("click", close);
+
+}
+
+
+// Announcement load करें
+loadAnnouncement();
 loadData();
