@@ -42,6 +42,86 @@ $("categoryForm").addEventListener("submit", async e=>{
 $("bookForm").addEventListener("submit", saveBook);
 $("cancelEdit").addEventListener("click", resetBookForm);
 $("adminSearch").addEventListener("input", renderAdminBooks);
+// ================= ANNOUNCEMENT =================
+
+$("announcementForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const title = $("announcementTitle").value.trim();
+  const message = $("announcementMessage").value.trim();
+
+  if (!title || !message) {
+    toast("Announcement title और message भरें।", "error");
+    return;
+  }
+
+  try {
+
+    // पहले पुराने announcements बंद करें
+    const { error: deactivateError } = await supabase
+      .from("announcements")
+      .update({ active: false })
+      .eq("active", true);
+
+    if (deactivateError) throw deactivateError;
+
+    // नया announcement publish करें
+    const { error } = await supabase
+      .from("announcements")
+      .insert({
+        title,
+        message,
+        active: true
+      });
+
+    if (error) throw error;
+
+    toast("Announcement published successfully.", "success");
+
+    $("announcementForm").reset();
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast(
+      error.message || "Announcement publish नहीं हुआ।",
+      "error"
+    );
+  }
+});
+
+
+// Remove announcement
+
+$("removeAnnouncement").addEventListener("click", async () => {
+
+  if (!confirm("Current announcement हटाना है?")) {
+    return;
+  }
+
+  try {
+
+    const { error } = await supabase
+      .from("announcements")
+      .update({ active: false })
+      .eq("active", true);
+
+    if (error) throw error;
+
+    toast("Announcement removed.", "success");
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast(
+      error.message || "Announcement remove नहीं हुआ।",
+      "error"
+    );
+  }
+
+});
 
 async function loadAll(){
   const [{data:c,error:ce},{data:b,error:be}]=await Promise.all([
