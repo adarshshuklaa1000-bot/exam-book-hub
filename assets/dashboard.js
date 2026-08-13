@@ -1,199 +1,906 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, STORAGE_BUCKET } from "./config.js";
 
-const configured = !SUPABASE_URL.startsWith("YOUR_") && !SUPABASE_ANON_KEY.startsWith("YOUR_");
-const supabase = configured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-const $ = id => document.getElementById(id);
-let categories = [], books = [];
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  ADMIN_EMAIL,
+  STORAGE_BUCKET
+} from "./config.js";
 
-function toast(msg, type="info") {
-  const el=$("toast"); el.textContent=msg; el.className=`toast show ${type}`;
-  setTimeout(()=>el.className="toast",3500);
-}
-function escapeHTML(value=""){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+const configured =
+  !SUPABASE_URL.startsWith("YOUR_") &&
+  !SUPABASE_ANON_KEY.startsWith("YOUR_");
 
-async function boot(){
-  if(!configured){toast("assets/config.js configure करें।","error");return;}
-  const {data:{session}} = await supabase.auth.getSession();
-  if(session) showDashboard(session); else showLogin();
-  supabase.auth.onAuthStateChange((_event, session)=>session ? showDashboard(session) : showLogin());
-}
-function showLogin(){ $("loginPanel").classList.remove("hidden"); $("dashboardPanel").classList.add("hidden"); }
-async function showDashboard(session){
-  if(ADMIN_EMAIL && !ADMIN_EMAIL.startsWith("YOUR_") && session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-    await supabase.auth.signOut(); toast("यह account admin नहीं है।","error"); return;
+const supabase = configured
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const $ = (id) => document.getElementById(id);
+
+let categories = [];
+let books = [];
+
+/* ================= TOAST ================= */
+
+function toast(msg, type = "info") {
+  const el = $("toast");
+
+  if (!el) {
+    alert(msg);
+    return;
   }
-  $("loginPanel").classList.add("hidden"); $("dashboardPanel").classList.remove("hidden"); $("adminEmail").textContent=session.user.email;
+
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+
+  setTimeout(() => {
+    el.className = "toast";
+  }, 3500);
+}
+
+/* ================= SECURITY ================= */
+
+function escapeHTML(value = "") {
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[c]));
+}
+
+/* ================= LOGIN ================= */
+
+async function boot() {
+  if (!configured) {
+    showLogin();
+    toast("assets/config.js configure करें।", "error");
+    return;
+  }
+
+  try {
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      await showDashboard(session);
+    } else {
+      showLogin();
+    }
+
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        await showDashboard(session);
+      } else {
+        showLogin();
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    showLogin();
+    toast("Authentication error.", "error");
+  }
+}
+
+function showLogin() {
+  const loginPanel = $("loginPanel");
+  const dashboardPanel = $("dashboardPanel");
+
+  if (loginPanel) {
+    loginPanel.classList.remove("hidden");
+  }
+
+  if (dashboardPanel) {
+    dashboardPanel.classList.add("hidden");
+  }
+}
+
+async function showDashboard(session) {
+  if (!session || !session.user) {
+    showLogin();
+    return;
+  }
+
+  const email = session.user.email || "";
+
+  if (
+    ADMIN_EMAIL &&
+    !ADMIN_EMAIL.startsWith("YOUR_") &&
+    email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()
+  ) {
+    await supabase.auth.signOut();
+    toast("यह account admin नहीं है।", "error");
+    return;
+  }
+
+  const loginPanel = $("loginPanel");
+  const dashboardPanel = $("dashboardPanel");
+  const adminEmail = $("adminEmail");
+
+  if (loginPanel) {
+    loginPanel.classList.add("hidden");
+  }
+
+  if (dashboardPanel) {
+    dashboardPanel.classList.remove("hidden");
+  }
+
+  if (adminEmail) {
+    adminEmail.textContent = email;
+  }
+
   await loadAll();
 }
-$("loginForm").addEventListener("submit", async e=>{
-  e.preventDefault();
-  if(!configured){toast("पहले config.js configure करें।","error");return;}
-  const {error}=await supabase.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
-  if(error) toast(error.message,"error");
-});
-$("logoutBtn").addEventListener("click",()=>supabase.auth.signOut());
-$("categoryForm").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const name=$("categoryName").value.trim(), icon=$("categoryIcon").value.trim()||"📚", group_name=$("categoryGroup").value;
-  const {error}=await supabase.from("exam_categories").insert({group_name,name,icon});
-  if(error) toast(error.message,"error"); else {e.target.reset();toast("Category added.","success");loadAll();}
-});
-$("bookForm").addEventListener("submit", saveBook);
-$("cancelEdit").addEventListener("click", resetBookForm);
-$("adminSearch").addEventListener("input", renderAdminBooks);
-// ================= ANNOUNCEMENT =================
 
-$("announcementForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+/* ================= LOGIN FORM ================= */
 
-  const title = $("announcementTitle").value.trim();
-  const message = $("announcementMessage").value.trim();
+const loginForm = $("loginForm");
 
-  if (!title || !message) {
-    toast("Announcement title और message भरें।", "error");
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!configured) {
+      toast("पहले config.js configure करें।", "error");
+      return;
+    }
+
+    const email = $("email")?.value.trim();
+    const password = $("password")?.value;
+
+    if (!email || !password) {
+      toast("Email और password भरें।", "error");
+      return;
+    }
+
+    const button = loginForm.querySelector("button[type='submit']");
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Logging in...";
+    }
+
+    try {
+      const { error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) {
+        console.error("LOGIN ERROR:", error);
+        toast(error.message, "error");
+        return;
+      }
+
+      toast("Login successful.", "success");
+
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+      toast(error.message || "Login failed.", "error");
+
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Secure Login →";
+      }
+    }
+  });
+}
+
+/* ================= LOGOUT ================= */
+
+const logoutBtn = $("logoutBtn");
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+  });
+}
+
+/* ================= LOAD ALL ================= */
+
+async function loadAll() {
+  if (!supabase) return;
+
+  try {
+    const [
+      { data: c, error: ce },
+      { data: b, error: be }
+    ] = await Promise.all([
+      supabase
+        .from("exam_categories")
+        .select("*")
+        .order("name"),
+
+      supabase
+        .from("books")
+        .select("*")
+        .order("created_at", { ascending: false })
+    ]);
+
+    if (ce || be) {
+      const error = ce || be;
+      console.error("LOAD ERROR:", error);
+      toast(error.message, "error");
+      return;
+    }
+
+    categories = c || [];
+    books = b || [];
+
+    renderCategories();
+    renderBookExam();
+    renderAdminBooks();
+
+    const dashBooks = $("dashBooks");
+    const dashCategories = $("dashCategories");
+
+    if (dashBooks) {
+      dashBooks.textContent = books.length;
+    }
+
+    if (dashCategories) {
+      dashCategories.textContent = categories.length;
+    }
+
+  } catch (error) {
+    console.error(error);
+    toast(error.message || "Data load failed.", "error");
+  }
+}
+
+/* ================= CATEGORY FORM ================= */
+
+const categoryForm = $("categoryForm");
+
+if (categoryForm) {
+  categoryForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    try {
+      const name = $("categoryName")?.value.trim();
+      const icon =
+        $("categoryIcon")?.value.trim() || "📚";
+      const group_name =
+        $("categoryGroup")?.value || "Other";
+
+      if (!name) {
+        toast("Category name भरें।", "error");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("exam_categories")
+        .insert({
+          group_name,
+          name,
+          icon
+        });
+
+      if (error) throw error;
+
+      categoryForm.reset();
+
+      toast("Category added.", "success");
+
+      await loadAll();
+
+    } catch (error) {
+      console.error(error);
+      toast(error.message || "Category add नहीं हुई।", "error");
+    }
+  });
+}
+
+/* ================= BOOK CATEGORY ================= */
+
+function renderBookExam() {
+  const bookExam = $("bookExam");
+
+  if (!bookExam) return;
+
+  if (!categories.length) {
+    bookExam.innerHTML =
+      `<option value="">Add a category first</option>`;
+    return;
+  }
+
+  bookExam.innerHTML = categories
+    .map(
+      (c) =>
+        `<option value="${escapeHTML(c.id)}">${escapeHTML(
+          c.name
+        )}</option>`
+    )
+    .join("");
+}
+
+/* ================= CATEGORIES ================= */
+
+function renderCategories() {
+  const container = $("adminCategories");
+
+  if (!container) return;
+
+  container.innerHTML =
+    categories
+      .map(
+        (c) => `
+          <div class="admin-list-row">
+
+            <span class="cat-mini">
+              ${escapeHTML(c.icon || "📚")}
+            </span>
+
+            <div>
+              <strong>${escapeHTML(c.name)}</strong>
+              <small>
+                ${
+                  books.filter(
+                    (b) =>
+                      b.exam_category_id === c.id
+                  ).length
+                } books
+              </small>
+            </div>
+
+            <button
+              class="danger-text"
+              data-delete-cat="${escapeHTML(c.id)}"
+            >
+              Delete
+            </button>
+
+          </div>
+        `
+      )
+      .join("") ||
+    `<div class="empty-mini">No categories yet.</div>`;
+
+  container
+    .querySelectorAll("[data-delete-cat]")
+    .forEach((btn) => {
+      btn.onclick = () =>
+        deleteCategory(btn.dataset.deleteCat);
+    });
+}
+
+async function deleteCategory(id) {
+  const count = books.filter(
+    (b) => b.exam_category_id === id
+  ).length;
+
+  if (
+    count &&
+    !confirm(
+      `इस category में ${count} books हैं। पहले books हटाएँ या edit करें। Delete करें?`
+    )
+  ) {
     return;
   }
 
   try {
-
-    // पहले पुराने announcements बंद करें
-    const { error: deactivateError } = await supabase
-      .from("announcements")
-      .update({ active: false })
-      .eq("active", true);
-
-    if (deactivateError) throw deactivateError;
-
-    // नया announcement publish करें
     const { error } = await supabase
-      .from("announcements")
-      .insert({
-        title,
-        message,
-        active: true
+      .from("exam_categories")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+
+    toast("Category deleted.", "success");
+
+    await loadAll();
+
+  } catch (error) {
+    console.error(error);
+    toast(error.message || "Delete failed.", "error");
+  }
+}
+
+/* ================= ADMIN SEARCH ================= */
+
+const adminSearch = $("adminSearch");
+
+if (adminSearch) {
+  adminSearch.addEventListener(
+    "input",
+    renderAdminBooks
+  );
+}
+
+/* ================= ADMIN BOOKS ================= */
+
+function renderAdminBooks() {
+  const container = $("adminBooks");
+
+  if (!container) return;
+
+  const q =
+    $("adminSearch")?.value
+      .trim()
+      .toLowerCase() || "";
+
+  const list = books.filter((b) =>
+    `${b.title} ${b.author || ""}`
+      .toLowerCase()
+      .includes(q)
+  );
+
+  container.innerHTML =
+    list
+      .map((b) => {
+        const cat = categories.find(
+          (c) =>
+            c.id === b.exam_category_id
+        );
+
+        return `
+          <tr>
+
+            <td>
+              <strong>
+                ${escapeHTML(b.title)}
+              </strong>
+
+              <small>
+                ${escapeHTML(b.author || "")}
+              </small>
+            </td>
+
+            <td>
+              ${escapeHTML(cat?.name || "—")}
+            </td>
+
+            <td>
+              ${b.year ? escapeHTML(b.year) : "—"}
+            </td>
+
+            <td>
+
+              <button
+                class="table-btn"
+                data-edit="${escapeHTML(b.id)}"
+              >
+                Edit
+              </button>
+
+              <button
+                class="table-btn danger"
+                data-del="${escapeHTML(b.id)}"
+              >
+                Delete
+              </button>
+
+            </td>
+
+          </tr>
+        `;
+      })
+      .join("") ||
+    `
+      <tr>
+        <td colspan="4" class="empty-mini">
+          No books found.
+        </td>
+      </tr>
+    `;
+
+  container
+    .querySelectorAll("[data-edit]")
+    .forEach((btn) => {
+      btn.onclick = () =>
+        editBook(btn.dataset.edit);
+    });
+
+  container
+    .querySelectorAll("[data-del]")
+    .forEach((btn) => {
+      btn.onclick = () =>
+        deleteBook(btn.dataset.del);
+    });
+}
+
+/* ================= EDIT BOOK ================= */
+
+function editBook(id) {
+  const b = books.find(
+    (x) => x.id === id
+  );
+
+  if (!b) return;
+
+  $("bookId").value = b.id;
+  $("bookTitle").value = b.title;
+  $("bookExam").value = b.exam_category_id;
+  $("bookAuthor").value = b.author || "";
+  $("bookYear").value = b.year || "";
+  $("bookDescription").value =
+    b.description || "";
+  $("bookTags").value = b.tags || "";
+
+  $("bookFormTitle").textContent =
+    "Edit Book";
+
+  $("saveBookBtn").textContent =
+    "Update Book →";
+
+  $("cancelEdit").classList.remove(
+    "hidden"
+  );
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+/* ================= RESET BOOK ================= */
+
+function resetBookForm() {
+  const form = $("bookForm");
+
+  if (form) {
+    form.reset();
+  }
+
+  $("bookId").value = "";
+
+  $("bookFormTitle").textContent =
+    "Add New Book";
+
+  $("saveBookBtn").textContent =
+    "Publish Book →";
+
+  $("cancelEdit").classList.add("hidden");
+}
+
+const cancelEdit = $("cancelEdit");
+
+if (cancelEdit) {
+  cancelEdit.addEventListener(
+    "click",
+    resetBookForm
+  );
+}
+
+/* ================= STORAGE ================= */
+
+async function uploadFile(file, folder) {
+  const safe = file.name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "-");
+
+  const path =
+    `${folder}/${crypto.randomUUID()}-${safe}`;
+
+  const { error } =
+    await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, {
+        upsert: false
       });
 
-    if (error) throw error;
+  if (error) throw error;
 
-    toast("Announcement published successfully.", "success");
+  return path;
+}
 
-    $("announcementForm").reset();
+/* ================= SAVE BOOK ================= */
 
-  } catch (error) {
+async function saveBook(e) {
+  e.preventDefault();
 
-    console.error(error);
+  const id = $("bookId").value;
 
+  const cover =
+    $("coverFile").files[0];
+
+  const pdf =
+    $("pdfFile").files[0];
+
+  if (!id && (!cover || !pdf)) {
     toast(
-      error.message || "Announcement publish नहीं हुआ।",
+      "New book के लिए cover image और PDF दोनों जरूरी हैं।",
       "error"
     );
-  }
-});
-
-
-// Remove announcement
-
-$("removeAnnouncement").addEventListener("click", async () => {
-
-  if (!confirm("Current announcement हटाना है?")) {
     return;
   }
 
   try {
+    $("progressWrap").classList.remove(
+      "hidden"
+    );
 
-    const { error } = await supabase
-      .from("announcements")
-      .update({ active: false })
-      .eq("active", true);
+    $("progressText").textContent =
+      "Uploading files...";
 
-    if (error) throw error;
+    let coverPath;
+    let pdfPath;
 
-    toast("Announcement removed.", "success");
+    if (cover) {
+      coverPath =
+        await uploadFile(
+          cover,
+          "covers"
+        );
+    }
+
+    if (pdf) {
+      pdfPath =
+        await uploadFile(
+          pdf,
+          "pdfs"
+        );
+    }
+
+    const payload = {
+      title:
+        $("bookTitle").value.trim(),
+
+      exam_category_id:
+        $("bookExam").value,
+
+      author:
+        $("bookAuthor").value.trim(),
+
+      year:
+        $("bookYear").value.trim(),
+
+      description:
+        $("bookDescription").value.trim(),
+
+      tags:
+        $("bookTags").value.trim()
+    };
+
+    if (coverPath) {
+      payload.cover_path =
+        coverPath;
+    }
+
+    if (pdfPath) {
+      payload.pdf_path =
+        pdfPath;
+    }
+
+    let result;
+
+    if (id) {
+      result =
+        await supabase
+          .from("books")
+          .update(payload)
+          .eq("id", id);
+    } else {
+      result =
+        await supabase
+          .from("books")
+          .insert(payload);
+    }
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    toast(
+      id
+        ? "Book updated successfully."
+        : "Book published successfully.",
+      "success"
+    );
+
+    resetBookForm();
+
+    await loadAll();
 
   } catch (error) {
-
     console.error(error);
 
     toast(
-      error.message || "Announcement remove नहीं हुआ।",
+      error.message || "Upload failed.",
+      "error"
+    );
+
+  } finally {
+    $("progressWrap").classList.add(
+      "hidden"
+    );
+  }
+}
+
+const bookForm = $("bookForm");
+
+if (bookForm) {
+  bookForm.addEventListener(
+    "submit",
+    saveBook
+  );
+}
+
+/* ================= DELETE BOOK ================= */
+
+async function deleteBook(id) {
+  const b = books.find(
+    (x) => x.id === id
+  );
+
+  if (
+    !b ||
+    !confirm(
+      `"${b.title}" को delete करना है?`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const { error } =
+      await supabase
+        .from("books")
+        .delete()
+        .eq("id", id);
+
+    if (error) throw error;
+
+    toast(
+      "Book deleted.",
+      "success"
+    );
+
+    await loadAll();
+
+  } catch (error) {
+    console.error(error);
+
+    toast(
+      error.message || "Delete failed.",
       "error"
     );
   }
+}
 
-});
+/* =================================================
+   ANNOUNCEMENT
+   ================================================= */
 
-async function loadAll(){
-  const [{data:c,error:ce},{data:b,error:be}]=await Promise.all([
-    supabase.from("exam_categories").select("*").order("name"),
-    supabase.from("books").select("*").order("created_at",{ascending:false})
-  ]);
-  if(ce||be){toast((ce||be).message,"error");return;}
-  categories=c||[];books=b||[];
-  renderCategories();renderBookExam();renderAdminBooks();
-  $("dashBooks").textContent=books.length;$("dashCategories").textContent=categories.length;
+const announcementForm =
+  $("announcementForm");
+
+const removeAnnouncement =
+  $("removeAnnouncement");
+
+if (announcementForm) {
+
+  announcementForm.addEventListener(
+    "submit",
+    async (e) => {
+
+      e.preventDefault();
+
+      const title =
+        $("announcementTitle")
+          ?.value
+          .trim();
+
+      const message =
+        $("announcementMessage")
+          ?.value
+          .trim();
+
+      if (!title || !message) {
+        toast(
+          "Announcement title और message भरें।",
+          "error"
+        );
+        return;
+      }
+
+      try {
+
+        const {
+          error: deactivateError
+        } = await supabase
+          .from("announcements")
+          .update({
+            active: false
+          })
+          .eq("active", true);
+
+        if (deactivateError) {
+          throw deactivateError;
+        }
+
+        const { error } =
+          await supabase
+            .from("announcements")
+            .insert({
+              title,
+              message,
+              active: true
+            });
+
+        if (error) {
+          throw error;
+        }
+
+        toast(
+          "Announcement published successfully.",
+          "success"
+        );
+
+        announcementForm.reset();
+
+      } catch (error) {
+
+        console.error(
+          "ANNOUNCEMENT ERROR:",
+          error
+        );
+
+        toast(
+          error.message ||
+            "Announcement publish नहीं हुआ।",
+          "error"
+        );
+      }
+    }
+  );
 }
-function renderBookExam(){
-  $("bookExam").innerHTML=categories.length?categories.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join(""):`<option value="">Add a category first</option>`;
+
+if (removeAnnouncement) {
+
+  removeAnnouncement.addEventListener(
+    "click",
+    async () => {
+
+      if (
+        !confirm(
+          "Current announcement हटाना है?"
+        )
+      ) {
+        return;
+      }
+
+      try {
+
+        const { error } =
+          await supabase
+            .from("announcements")
+            .update({
+              active: false
+            })
+            .eq("active", true);
+
+        if (error) {
+          throw error;
+        }
+
+        toast(
+          "Announcement removed.",
+          "success"
+        );
+
+      } catch (error) {
+
+        console.error(
+          "REMOVE ANNOUNCEMENT ERROR:",
+          error
+        );
+
+        toast(
+          error.message ||
+            "Announcement remove नहीं हुआ।",
+          "error"
+        );
+      }
+    }
+  );
 }
-function renderCategories(){
-  $("adminCategories").innerHTML=categories.map(c=>`<div class="admin-list-row"><span class="cat-mini">${escapeHTML(c.icon||"📚")}</span><div><strong>${escapeHTML(c.name)}</strong><small>${books.filter(b=>b.exam_category_id===c.id).length} books</small></div><button class="danger-text" data-delete-cat="${c.id}">Delete</button></div>`).join("") || `<div class="empty-mini">No categories yet.</div>`;
-  document.querySelectorAll("[data-delete-cat]").forEach(btn=>btn.onclick=()=>deleteCategory(btn.dataset.deleteCat));
-}
-async function deleteCategory(id){
-  const count=books.filter(b=>b.exam_category_id===id).length;
-  if(count && !confirm(`इस category में ${count} books हैं। पहले books हटाएँ या edit करें। Delete करें?`)) return;
-  const {error}=await supabase.from("exam_categories").delete().eq("id",id);
-  if(error) toast(error.message,"error"); else {toast("Category deleted.","success");loadAll();}
-}
-function renderAdminBooks(){
-  const q=$("adminSearch").value.trim().toLowerCase();
-  const list=books.filter(b=>`${b.title} ${b.author||""}`.toLowerCase().includes(q));
-  $("adminBooks").innerHTML=list.map(b=>{
-    const cat=categories.find(c=>c.id===b.exam_category_id);
-    return `<tr><td><strong>${escapeHTML(b.title)}</strong><small>${escapeHTML(b.author||"")}</small></td><td>${escapeHTML(cat?.name||"—")}</td><td>${b.year?escapeHTML(b.year):"—"}</td><td><button class="table-btn" data-edit="${b.id}">Edit</button><button class="table-btn danger" data-del="${b.id}">Delete</button></td></tr>`;
-  }).join("") || `<tr><td colspan="4" class="empty-mini">No books found.</td></tr>`;
-  document.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>editBook(btn.dataset.edit));
-  document.querySelectorAll("[data-del]").forEach(btn=>btn.onclick=()=>deleteBook(btn.dataset.del));
-}
-function editBook(id){
-  const b=books.find(x=>x.id===id); if(!b)return;
-  $("bookId").value=b.id;$("bookTitle").value=b.title;$("bookExam").value=b.exam_category_id;$("bookAuthor").value=b.author||"";$("bookYear").value=b.year||"";$("bookDescription").value=b.description||"";$("bookTags").value=b.tags||"";
-  $("bookFormTitle").textContent="Edit Book";$("saveBookBtn").textContent="Update Book →";$("cancelEdit").classList.remove("hidden");
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-function resetBookForm(){
-  $("bookForm").reset();$("bookId").value="";$("bookFormTitle").textContent="Add New Book";$("saveBookBtn").textContent="Publish Book →";$("cancelEdit").classList.add("hidden");
-}
-async function uploadFile(file, folder){
-  const safe=file.name.toLowerCase().replace(/[^a-z0-9._-]/g,"-");
-  const path=`${folder}/${crypto.randomUUID()}-${safe}`;
-  const {error}=await supabase.storage.from(STORAGE_BUCKET).upload(path,file,{upsert:false});
-  if(error) throw error;
-  return path;
-}
-async function saveBook(e){
-  e.preventDefault();
-  const id=$("bookId").value, cover=$("coverFile").files[0], pdf=$("pdfFile").files[0];
-  if(!id && (!cover || !pdf)){toast("New book के लिए cover image और PDF दोनों जरूरी हैं.","error");return;}
-  try{
-    $("progressWrap").classList.remove("hidden");$("progressText").textContent="Uploading files...";
-    let coverPath, pdfPath;
-    if(cover) coverPath=await uploadFile(cover,"covers");
-    if(pdf) pdfPath=await uploadFile(pdf,"pdfs");
-    const payload={title:$("bookTitle").value.trim(),exam_category_id:$("bookExam").value,author:$("bookAuthor").value.trim(),year:$("bookYear").value.trim(),description:$("bookDescription").value.trim(),tags:$("bookTags").value.trim()};
-    if(coverPath)payload.cover_path=coverPath;if(pdfPath)payload.pdf_path=pdfPath;
-    let result;
-    if(id) result=await supabase.from("books").update(payload).eq("id",id); else result=await supabase.from("books").insert(payload);
-    if(result.error)throw result.error;
-    toast(id?"Book updated successfully.":"Book published successfully.","success");resetBookForm();await loadAll();
-  }catch(err){console.error(err);toast(err.message||"Upload failed.","error");}
-  finally{$("progressWrap").classList.add("hidden");}
-}
-async function deleteBook(id){
-  const b=books.find(x=>x.id===id); if(!b||!confirm(`"${b.title}" को delete करना है?`))return;
-  const {error}=await supabase.from("books").delete().eq("id",id);
-  if(error)toast(error.message,"error");else{toast("Book deleted.","success");loadAll();}
-}
+
+/* ================= START ================= */
+
 boot();
-                                                                                                                             
