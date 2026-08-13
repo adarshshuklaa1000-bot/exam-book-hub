@@ -763,144 +763,96 @@ async function deleteBook(id) {
   }
 }
 
-/* =================================================
-   ANNOUNCEMENT
-   ================================================= */
+// ================= ANNOUNCEMENT =================
 
-const announcementForm =
-  $("announcementForm");
-
-const removeAnnouncement =
-  $("removeAnnouncement");
+const announcementForm = $("announcementForm");
+const announcementInput = $("announcementInput");
+const removeAnnouncement = $("removeAnnouncement");
 
 if (announcementForm) {
+  announcementForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  announcementForm.addEventListener(
-    "submit",
-    async (e) => {
+    const message = announcementInput
+      ? announcementInput.value.trim()
+      : "";
 
-      e.preventDefault();
-
-      const title =
-        $("announcementTitle")
-          ?.value
-          .trim();
-
-      const message =
-        $("announcementMessage")
-          ?.value
-          .trim();
-
-      if (!title || !message) {
-        toast(
-          "Announcement title और message भरें।",
-          "error"
-        );
-        return;
-      }
-
-      try {
-
-        const {
-          error: deactivateError
-        } = await supabase
-          .from("announcements")
-          .update({
-            active: false
-          })
-          .eq("active", true);
-
-        if (deactivateError) {
-          throw deactivateError;
-        }
-
-        const { error } =
-          await supabase
-            .from("announcements")
-            .insert({
-              title,
-              message,
-              active: true
-            });
-
-        if (error) {
-          throw error;
-        }
-
-        toast(
-          "Announcement published successfully.",
-          "success"
-        );
-
-        announcementForm.reset();
-
-      } catch (error) {
-
-        console.error(
-          "ANNOUNCEMENT ERROR:",
-          error
-        );
-
-        toast(
-          error.message ||
-            "Announcement publish नहीं हुआ।",
-          "error"
-        );
-      }
+    if (!message) {
+      toast("Announcement message भरें।", "error");
+      return;
     }
-  );
+
+    try {
+      // पहले सभी पुराने announcements inactive करें
+      const { error: deactivateError } = await supabase
+        .from("announcements")
+        .update({ active: false })
+        .eq("active", true);
+
+      if (deactivateError) {
+        throw deactivateError;
+      }
+
+      // नया announcement active करें
+      const { error } = await supabase
+        .from("announcements")
+        .insert({
+          message: message,
+          active: true
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast("Announcement published successfully.", "success");
+
+      announcementInput.value = "";
+
+    } catch (error) {
+      console.error("ANNOUNCEMENT ERROR:", error);
+
+      toast(
+        error.message || "Announcement publish नहीं हुआ।",
+        "error"
+      );
+    }
+  });
 }
+
+
+// ================= REMOVE ANNOUNCEMENT =================
 
 if (removeAnnouncement) {
+  removeAnnouncement.addEventListener("click", async () => {
 
-  removeAnnouncement.addEventListener(
-    "click",
-    async () => {
-
-      if (
-        !confirm(
-          "Current announcement हटाना है?"
-        )
-      ) {
-        return;
-      }
-
-      try {
-
-        const { error } =
-          await supabase
-            .from("announcements")
-            .update({
-              active: false
-            })
-            .eq("active", true);
-
-        if (error) {
-          throw error;
-        }
-
-        toast(
-          "Announcement removed.",
-          "success"
-        );
-
-      } catch (error) {
-
-        console.error(
-          "REMOVE ANNOUNCEMENT ERROR:",
-          error
-        );
-
-        toast(
-          error.message ||
-            "Announcement remove नहीं हुआ।",
-          "error"
-        );
-      }
+    if (!confirm("Current announcement हटाना है?")) {
+      return;
     }
-  );
-}
 
-/* ================= START ================= */
+    try {
+
+      const { error } = await supabase
+        .from("announcements")
+        .update({ active: false })
+        .eq("active", true);
+
+      if (error) {
+        throw error;
+      }
+
+      toast("Announcement removed.", "success");
+
+    } catch (error) {
+      console.error("REMOVE ANNOUNCEMENT ERROR:", error);
+
+      toast(
+        error.message || "Announcement remove नहीं हुआ।",
+        "error"
+      );
+    }
+
+  });
+}
 
 boot();
