@@ -1350,3 +1350,238 @@ td small{
     grid-template-columns:1fr;
   }
 }
+/* ==========================================
+   EXAM SECTION — FINAL MOBILE UI
+   Orange + White
+   ========================================== */
+
+#exams{
+  width:100%;
+  overflow:hidden;
+}
+
+/* Main exam groups */
+#exams .category-grid{
+  width:100%;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:32px;
+}
+
+/* Each state/group */
+#exams .category-group{
+  width:100%;
+  min-width:0;
+  margin:0;
+}
+
+/* State heading */
+#exams .category-group-title{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:0 0 12px;
+}
+
+#exams .category-group-title span{
+  color:#202020;
+  font:800 22px/1.1 Outfit,sans-serif;
+  letter-spacing:-.4px;
+}
+
+#exams .category-group-title b{
+  padding:5px 9px;
+  border-radius:20px;
+  background:#fff1e6;
+  border:1px solid #ffe0c8;
+  color:#f36b16;
+  font-size:8px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+/* Exam cards grid */
+#exams .category-group-grid{
+  width:100%;
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+/* Individual exam card */
+#exams .category-card{
+  width:100%;
+  min-width:0;
+  min-height:106px;
+  padding:13px 10px;
+
+  display:flex;
+  align-items:center;
+  gap:9px;
+
+  border:1px solid #ebebeb;
+  border-radius:16px;
+
+  background:#fff;
+
+  box-shadow:
+    0 5px 18px rgba(0,0,0,.045);
+
+  overflow:hidden;
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+/* Touch effect */
+#exams .category-card:active{
+  transform:scale(.98);
+  border-color:#ffc092;
+  box-shadow:0 6px 20px rgba(255,107,0,.10);
+}
+
+/* Exam icon */
+#exams .cat-icon{
+  width:42px;
+  height:42px;
+  min-width:42px;
+
+  display:grid;
+  place-items:center;
+
+  border-radius:12px;
+  background:#fff2e7;
+
+  font-size:19px;
+}
+
+/* Text container */
+#exams .category-card > div{
+  min-width:0;
+  flex:1;
+}
+
+/* Exam name */
+#exams .category-card strong{
+  display:block;
+  max-width:100%;
+
+  color:#242424;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:700;
+
+  overflow-wrap:anywhere;
+}
+
+/* Book count */
+#exams .category-card small{
+  display:block;
+  margin-top:5px;
+
+  color:#999;
+  font-size:8px;
+  line-height:1.3;
+}
+
+/* Hide arrow on mobile */
+#exams .category-card > b{
+  display:none;
+}
+
+/* ==========================================
+   EXAM SECTION HEADING
+   ========================================== */
+
+#exams .section-heading{
+  margin-bottom:24px;
+}
+
+#exams .section-heading h2{
+  color:#202020;
+}
+
+#exams .section-heading p{
+  color:#777;
+  max-width:340px;
+}
+
+#exams .text-link{
+  color:#f36b16;
+  font-weight:800;
+}
+
+/* ==========================================
+   MOBILE
+   ========================================== */
+
+@media(max-width:600px){
+
+  #exams{
+    padding-left:15px;
+    padding-right:15px;
+  }
+
+  #exams .category-grid{
+    grid-template-columns:1fr;
+    gap:32px;
+  }
+
+  #exams .category-group{
+    width:100%;
+  }
+
+  #exams .category-group-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  #exams .category-card{
+    min-height:105px;
+  }
+}
+
+/* ==========================================
+   SMALL PHONES
+   ========================================== */
+
+@media(max-width:370px){
+
+  #exams .category-group-grid{
+    gap:8px;
+  }
+
+  #exams .category-card{
+    min-height:98px;
+    padding:11px 8px;
+    gap:7px;
+  }
+
+  #exams .cat-icon{
+    width:37px;
+    height:37px;
+    min-width:37px;
+    border-radius:10px;
+    font-size:17px;
+  }
+
+  #exams .category-card strong{
+    font-size:10px;
+  }
+
+  #exams .category-card small{
+    font-size:7px;
+  }
+
+  #exams .category-group-title span{
+    font-size:20px;
+  }
+
+  #exams .category-group-title b{
+    font-size:7px;
+    padding:4px 7px;
+  }
+}
