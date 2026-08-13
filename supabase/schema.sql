@@ -131,4 +131,64 @@ begin new.updated_at=now(); return new; end $$;
 drop trigger if exists books_set_updated_at on public.books;
 create trigger books_set_updated_at before update on public.books
 for each row execute function public.set_updated_at();
+-- ================= ANNOUNCEMENTS =================
+
+create table if not exists public.announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null default 'Announcement',
+  message text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+alter table public.announcements enable row level security;
+
+drop policy if exists "Public can read active announcements"
+on public.announcements;
+
+create policy "Public can read active announcements"
+on public.announcements
+for select
+to anon, authenticated
+using (active = true);
+
+drop policy if exists "Admin insert announcements"
+on public.announcements;
+
+create policy "Admin insert announcements"
+on public.announcements
+for insert
+to authenticated
+with check (
+  lower(auth.jwt()->>'email')
+  = lower('adarshshuklaa1000@gmail.com')
+);
+
+drop policy if exists "Admin update announcements"
+on public.announcements;
+
+create policy "Admin update announcements"
+on public.announcements
+for update
+to authenticated
+using (
+  lower(auth.jwt()->>'email')
+  = lower('adarshshuklaa1000@gmail.com')
+)
+with check (
+  lower(auth.jwt()->>'email')
+  = lower('adarshshuklaa1000@gmail.com')
+);
+
+drop policy if exists "Admin delete announcements"
+on public.announcements;
+
+create policy "Admin delete announcements"
+on public.announcements
+for delete
+to authenticated
+using (
+  lower(auth.jwt()->>'email')
+  = lower('adarshshuklaa1000@gmail.com')
+);
 
