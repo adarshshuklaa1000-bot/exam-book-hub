@@ -41,6 +41,40 @@
       </div>
 
       <div class="admin-stats">
+        <!-- ================= ANNOUNCEMENT ================= -->
+<div class="admin-card announcement-admin-card">
+  <div class="card-head">
+    <div>
+      <span class="section-kicker">WEBSITE NOTICE</span>
+      <h2>🔔 Announcement Banner</h2>
+    </div>
+  </div>
+
+  <form id="announcementForm">
+    <label>
+      Announcement Message
+      <input
+        id="announcementInput"
+        type="text"
+        maxlength="180"
+        placeholder="जैसे 🔔 New SSC books added today"
+        required
+      >
+    </label>
+
+    <button
+      class="btn btn-primary full"
+      type="submit"
+    >
+      Save Announcement →
+    </button>
+  </form>
+
+  <small class="security-note">
+    यह message आपकी website के सबसे ऊपर दिखाई देगा।
+  </small>
+</div>
+<!-- =============== END ANNOUNCEMENT =============== -->
         <div class="admin-stat"><span>📚</span><b id="dashBooks">0</b><small>Total Books</small></div>
         <div class="admin-stat"><span>🎯</span><b id="dashCategories">0</b><small>Categories</small></div>
         <div class="admin-stat"><span>☁️</span><b>LIVE</b><small>Vercel + Supabase</small></div>
