@@ -729,12 +729,69 @@
   ></div>
 
 
-  <!-- ================= JAVASCRIPT ================= -->
+  <!-- ================= ANNOUNCEMENT POPUP ================= -->
 
-  <script
-    type="module"
-    src="./assets/app.js"
-  ></script>
+<div id="announcementPopup" class="announcement-popup">
+
+  <div class="announcement-overlay"></div>
+
+  <div class="announcement-modal">
+
+    <button
+      id="closeAnnouncement"
+      class="announcement-close"
+      type="button"
+      aria-label="Close announcement"
+    >
+      ×
+    </button>
+
+    <div class="announcement-brand">
+
+      <span class="brand-mark">EB</span>
+
+      <div>
+        <strong>ExamBook <em>Hub</em></strong>
+        <small>Powered by Adarsh Shukla</small>
+      </div>
+
+    </div>
+
+    <div class="announcement-icon">
+      🔔
+    </div>
+
+    <div class="announcement-label">
+      IMPORTANT ANNOUNCEMENT
+    </div>
+
+    <div
+      id="announcementMessage"
+      class="announcement-message"
+    ></div>
+
+    <button
+      id="gotAnnouncement"
+      class="announcement-btn"
+      type="button"
+    >
+      Got it ✓
+    </button>
+
+  </div>
+
+</div>
+
+<!-- =============== END ANNOUNCEMENT POPUP =============== -->
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script
+  type="module"
+  src="./assets/app.js"
+></script>
 
 </body>
+
 </html>
